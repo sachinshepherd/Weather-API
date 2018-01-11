@@ -1,0 +1,77 @@
+
+import argparse
+
+import requests
+
+import sys, json, re, os, time
+from urllib import quote
+
+class OptionParser:
+
+    parser = argparse.ArgumentParser()
+ 
+    def __init__(self):
+
+        # We are going to use sub commands to make user input look cleaner
+        subparser = self.parser.add_subparsers(dest="sub")
+        fetch_parser = subparser.add_parser("fetch")
+        fetch_parser.add_argument("apikey", action="store", metavar="<apikey>", nargs="?",
+                                  help="Fetch data with given API key\n\n")
+        fetch_parser.add_argument("location", action="store", metavar="<location>", nargs="?",
+                                  help="Fetch data with given location\n\n")
+
+    def parse_args(self):
+        args = self.parser.parse_args()
+        return args
+
+
+class FetchData:
+
+
+    def __init__(self, args):
+
+        self.args = args
+
+        if args.sub == "fetch":
+            apikey = args.apikey
+            location = args.location
+            language = 'EN'
+          
+            print self.fetch_data(apikey, location, language)
+
+    def fetch_data(self, apikey, location, language):
+
+        # Get data from Weather Underground API
+
+        state = location.split(',')[1]
+        city = location.split(',')[0]
+        city = city.replace(" ","_")
+
+        req = ("http://api.wunderground.com/api/%s/conditions/q/%s/%s.json"
+               % (apikey, state, city))
+
+        try:
+            response = requests.get(req)
+        except URLError as e:
+            pass
+         
+        data = response.json()
+
+        result = {}
+        
+        result['weather'] = data['current_observation']['weather']
+        result['temp_f'] = data['current_observation']['temp_f']
+        return json.dumps(result)
+
+
+def main():
+
+    parser = OptionParser()
+    args = parser.parse_args()
+
+    forecast = FetchData(args)
+
+if __name__ == '__main__':
+
+    main()
+    sys.exit()
